@@ -104,7 +104,7 @@ int main(void) {
 		vist=( recv[4]+256* recv[5]-32768)/10000.0f; //v(t) rechtes Rad [m/sek]
 		//float sl=( recv[6]+256* recv[7]-32768)*0.00452;    //s(t) linkes Rad [m]
 
-float vsoll=0.5 // Vorgabe der Motorgeschwindigkeit
+float vsoll=0.5; // Vorgabe der Motorgeschwindigkeit
 //_____________________________________________________________________________________
 //Motor-Drehzahl-Regelung (Kaskadenregler)...benötigt vsoll(t)
 		float e = vsoll - vist; 		//Regelabweichung e
