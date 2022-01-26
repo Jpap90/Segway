@@ -1,5 +1,5 @@
 #include "stm32g0xx.h"
-volatile float vist; //global deklariert, fuer Anzeige beim Debuggen
+volatile float Vist; //global deklariert, fuer Anzeige beim Debuggen
 volatile float phi; //global deklariert, fuer Anzeige beim Debuggen
 
 float i_reg=0;		//Integrator für Cascade Control, Initialisierung
@@ -7,6 +7,12 @@ float i_reg=0;		//Integrator für Cascade Control, Initialisierung
 const float Ta=0.01; 	//Periodendauer der Regelschleife (10msek)
 const float Ti=0.1 ;	//I-Zeitkonst. Kaskadenregler
 const float Kr=2/0.216;	//Verstärkung Kaskadenregler n/Ks
+
+const float K[4]={-1.4142, -3.2264, 14.5024, 4.0944};
+
+volatile float phi_alt;
+_Bool START = 1;
+volatile float Omega;
 
 //_______________________________________________________________________________________
 //Function UART auslesen
@@ -99,19 +105,36 @@ int main(void) {
 		for (unsigned int i = 0; i < 8; i++){
 			recv[i] = __io_getchar(); //Messwerte über UART einlesen
 		}
-		//phi = (recv[0]+256*recv[1]-32768) / 1024.0f; //phi(t), in [°]
-		//float sr=( recv[2]+256* recv[3]-32768)*0.00452;    //s(t) rechtes Rad [m]
-		vist=( recv[4]+256* recv[5]-32768)/10000.0f; //v(t) rechtes Rad [m/sek]
-		//float sl=( recv[6]+256* recv[7]-32768)*0.00452;    //s(t) linkes Rad [m]
 
-float vsoll=0.5; // Vorgabe der Motorgeschwindigkeit
+		phi = (recv[0]+256*recv[1]-32768) / 1024.0f; //phi(t), in [°]
+		phi = phi*3.14/180.0; //PHI in rad
+
+		Omega = (phi - phi_alt)/Ta;
+		phi_alt= phi;
+
+		float sr=( recv[2]+256* recv[3]-32768)*0.00452;    //s(t) rechtes Rad [m]
+		Vist=( recv[4]+256* recv[5]-32768)/10000.0f; //v(t) rechtes Rad [m/sek]
+		float sl=( recv[6]+256* recv[7]-32768)*0.00452;    //s(t) linkes Rad [m]
+		if(START == 1){
+			phi = 0;
+			sr = 0;
+			sl = 0;
+			Vist = 0;
+			START = 0;
+		}
+		float Vsoll= Vsoll= K[0]*sr;
+			  Vsoll=Vsoll+K[1]*Vist;
+			  Vsoll=Vsoll+K[2]*phi;
+			  Vsoll=Vsoll+K[3]*Omega;
+			  Vsoll=0-Vsoll;
+
 //_____________________________________________________________________________________
 //Motor-Drehzahl-Regelung (Kaskadenregler)...benötigt vsoll(t)
-		float e = vsoll - vist; 		//Regelabweichung e
+		float e = Vsoll - Vist; 		//Regelabweichung e
 		      i_reg = i_reg + e;		//Integrator des PI-Reglers
 		float u = (e+(i_reg*Ta/Ti))*Kr; //Stellgröße Spannung in [V]
 
-		volt2bridge(u, -u);	//Ausgabe an die H-Brücken (rechtes Rad, linkes Rad(das dreht sich rueckwaerts :))
+		volt2bridge(u, u);	//Ausgabe an die H-Brücken (rechtes Rad, linkes Rad(das dreht sich rueckwaerts :))
 		while(TIM3->CNT < 10000) {}  // 10ms spaeter
 	}//Ende While...Endlosschleie
 
