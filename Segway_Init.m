@@ -1,10 +1,10 @@
 %Definitionen zum Segway State Space Control
 %________________________________________________
 %Segway:
-l=0.45;  %Länge [m] Boden->Masseschwerpunkt
-mp= 1.5; %Masse [kg] des ganzen Segways
+l=0.43;  %Länge [m] Boden->Masseschwerpunkt
+mp= 2.185; %Masse [kg] des ganzen Segways
 g=9.81; %Erdbeschleunigung
-Tp=1.6; %gemessene Schwingungsperiode [sek]
+Tp=1.75; %gemessene Schwingungsperiode [sek]
 
 Jr=Tp^2*l*mp*g/(4*pi*pi); %Trägheitsmoment
 Tm=0.15; %Motorzeitkonstante 
@@ -43,3 +43,5 @@ Poles_R=eig(A-b*K);
 cts=[1 0 0 0]; %mit Weg s(t) als Führungsgröße
 F=1/(cts*(-A+b*K)^-1*b);
 
+%EIgenwerte A
+EIG_A = eig(A)
